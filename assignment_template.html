@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=utf-8 />
+    <title>US Power Plants - Renewable Energy Sources</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: whitesmoke;
+            font-family: Lato, sans-serif;
+            color: #0D0000;
+        }
+        header {
+            padding: 6px 10%;
+        }
+        h1 {
+            display: inline-block;
+            margin-right: 20px;
+            color: #001323;
+        }
+        h2 {
+            display: inline-block;
+            color: #001323;
+        }
+        #map {
+            width: 80%;
+            height: 540px;
+            margin: 10px auto;
+        }
+        footer {
+            padding: 6px 10%;
+            width: 80%;
+        }
+        p {
+            font-size: 1em;
+            color: #001323;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>US Power Plants Map</h1>
+        <h2>Biomass, Geothermal, and Solar Energy Sources</h2>
+    </header>
+
+    <div id='map'></div>
+
+    <footer>
+        <p>Map authored by Nitin Yagnala</p>
+        <p>This map displays renewable energy power plants across the United States. Circle size represents generating capacity in megawatts (MW).</p>
+    </footer>
+
+    <script src="power-plants.js"></script>
+    <script>
+var map = L.map('map', {
+  center: [36, -94],
+  zoom: 4,
+});
+
+var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+});
+tiles.addTo(map);
+
+// STEP 2: radius function (scaled for small MW)
+function getRadius(mw) {
+  var r = Math.sqrt(Number(mw)) * 1.2;
+  return Math.max(3, r);
+}
+
+
+function onEachPlant(feature, layer) {
+  var name = feature.properties.plant_name || "Unknown plant";
+  var cap = Number(feature.properties.capacity_mw || 0).toLocaleString();
+  layer.bindPopup("<b>" + name + "</b><br>Capacity: " + cap + " MW");
+}
+
+// STEP 3: 3 layers, each filtered + colored
+
+console.log("Checking fuel sources...");
+var fuelCounts = { Biomass: 0, Geothermal: 0, Solar: 0 };
+plants.features.forEach(function(f) {
+  if (f.properties.fuel_source) {
+    if (f.properties.fuel_source.Biomass) fuelCounts.Biomass++;
+    if (f.properties.fuel_source.Geothermal) fuelCounts.Geothermal++;
+    if (f.properties.fuel_source.Solar) fuelCounts.Solar++;
+  }
+});
+console.log("Found plants:", fuelCounts);
+
+var biomassLayer = L.geoJson(plants, {
+  filter: function (feature) {
+    return feature.properties.fuel_source && feature.properties.fuel_source.Biomass;
+  },
+  pointToLayer: function (feature, latlng) {
+    return L.circleMarker(latlng, {
+      color: "#2ca25f",
+      weight: 2,
+      fillColor: "#2ca25f",
+      fillOpacity: 0.6,
+      radius: getRadius(feature.properties.capacity_mw)
+    });
+  },
+  onEachFeature: onEachPlant
+});
+
+var geothermalLayer = L.geoJson(plants, {
+  filter: function (feature) {
+    return feature.properties.fuel_source && feature.properties.fuel_source.Geothermal;
+  },
+  pointToLayer: function (feature, latlng) {
+    return L.circleMarker(latlng, {
+      color: "#e6550d",
+      weight: 2,
+      fillColor: "#e6550d",
+      fillOpacity: 0.6,
+      radius: getRadius(feature.properties.capacity_mw)
+    });
+  },
+  onEachFeature: onEachPlant
+});
+
+var solarLayer = L.geoJson(plants, {
+  filter: function (feature) {
+    return feature.properties.fuel_source && feature.properties.fuel_source.Solar;
+  },
+  pointToLayer: function (feature, latlng) {
+    return L.circleMarker(latlng, {
+      color: "#f1c40f",
+      weight: 2,
+      fillColor: "#f1c40f",
+      fillOpacity: 0.6,
+      radius: getRadius(feature.properties.capacity_mw)
+    });
+  },
+  onEachFeature: onEachPlant
+});
+
+// Add all by default for comparison
+biomassLayer.addTo(map);
+geothermalLayer.addTo(map);
+solarLayer.addTo(map);
+
+// layer control with colored labels
+var overlays = {};
+overlays['<span style="color:#2ca25f;font-weight:700;">Biomass</span>'] = biomassLayer;
+overlays['<span style="color:#e6550d;font-weight:700;">Geothermal</span>'] = geothermalLayer;
+overlays['<span style="color:#f1c40f;font-weight:700;">Solar</span>'] = solarLayer;
+
+L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+      
+         
+   
+      
+
+
+  
+    </script>
+    
+</body>
+
+</html>
